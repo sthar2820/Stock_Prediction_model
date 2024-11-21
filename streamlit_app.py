@@ -60,18 +60,21 @@ class Dashboard:
     def __init__(self, stock_model):
         self.stock_model = stock_model
         self.portfolio = {}
-        self.balance = 0  # Starting balance of 0
+        if 'balance' not in st.session_state:
+            st.session_state.balance = 10000  # Starting balance of $10,000
 
     def render_sidebar(self):
         st.sidebar.title("Stock Portfolio")
         
         # Display current balance
-        st.sidebar.subheader(f"Current Balance: ${self.balance:.2f}")
+        st.sidebar.subheader(f"Current Balance: ${st.session_state.balance:.2f}")
         
-        # Add money button
-        if st.sidebar.button("Add $1000"):
-            self.balance += 1000
-            st.sidebar.success("$1000 added to your balance!")
+        # Add custom amount of money
+        amount_to_add = st.sidebar.number_input("Enter amount to add:", min_value=0.01, value=100.00, step=0.01, format="%.2f")
+        if st.sidebar.button("Add Money"):
+            st.session_state.balance += amount_to_add
+            st.sidebar.success(f"${amount_to_add:.2f} added to your balance!")
+            st.sidebar.experimental_rerun()
 
         # List of stocks
         st.sidebar.subheader("Your Stocks")
