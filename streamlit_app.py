@@ -60,7 +60,7 @@ class Dashboard:
     def __init__(self, stock_model):
         self.stock_model = stock_model
         self.portfolio = {}
-        self.balance = 10000  # Starting balance of $10,000
+        self.balance = 0  # Starting balance of 0
 
     def render_sidebar(self):
         st.sidebar.title("Stock Portfolio")
