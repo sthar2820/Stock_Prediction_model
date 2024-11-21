@@ -3,7 +3,6 @@ pandas
 yfinance
 matplotlib
 seaborn
-statsmodel.api
 numpy
 scikit-learn
 RandomForestRegressor
