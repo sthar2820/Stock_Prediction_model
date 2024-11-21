@@ -5,5 +5,5 @@ matplotlib
 seaborn
 numpy
 scikit-learn
-TA-Lib
+
 
