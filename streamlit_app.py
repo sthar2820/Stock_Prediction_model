@@ -3,7 +3,11 @@ import hashlib
 import json
 import os
 import pandas as pd
-import yfinance as yf  # Install with `pip install yfinance`
+import yfinance as yf
+from datetime import datetime
+
+# Enable pandas_datareader override for yfinance
+yf.pdr_override()
 
 # Helper functions for password hashing and user data
 def hash_password(password):
@@ -64,6 +68,26 @@ if auth_mode == "Dashboard":
     if st.session_state.get("logged_in"):
         st.subheader(f"Welcome to the Dashboard, {st.session_state['username']}!")
 
+        # Collapsible Tech Stocks Section
+        st.write("### Tech Stock Data")
+        tech_list = ['AAPL', 'GOOG', 'MSFT', 'AMZN']
+        end = datetime.now()
+        start = datetime(end.year - 1, end.month, end.day)
+
+        company_list = []
+        company_name = ["APPLE", "GOOGLE", "MICROSOFT", "AMAZON"]
+
+        for stock, com_name in zip(tech_list, company_name):
+            data = yf.download(stock, start, end)
+            data["company_name"] = com_name
+            company_list.append(data)
+
+        df = pd.concat(company_list, axis=0)
+
+        with st.expander("View Tech Stock Data (Collapsible)", expanded=True):
+            st.write("### Tech Stock Data (Last 10 Rows)")
+            st.dataframe(df.tail(10))
+
         # Stock Trends Section
         st.write("### Current Stock Price Trends")
         ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA, AMZN):", "AAPL")
@@ -84,7 +108,7 @@ if auth_mode == "Dashboard":
             except Exception as e:
                 st.error("Error fetching stock data. Please check the ticker symbol.")
 
-        # Top 5 Trending Stocks (Static Example)
+        # Top 5 Trending Stocks
         st.write("### Top 5 Trending Stocks")
         trending_stocks = ["AAPL", "TSLA", "AMZN", "GOOGL", "MSFT"]
         for stock in trending_stocks:
