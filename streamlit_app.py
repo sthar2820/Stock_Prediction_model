@@ -3,7 +3,6 @@ import hashlib
 import json
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
 import yfinance as yf  # Install with `pip install yfinance`
 
 # Helper functions for password hashing and user data
@@ -21,7 +20,7 @@ def save_user_data(user_data):
         json.dump(user_data, file)
 
 # App title
-st.title("Streamlit Stock Dashboard")
+st.title("Stock Price Dashboard")
 
 # Sidebar for navigation
 st.sidebar.title("Navigation")
@@ -66,32 +65,33 @@ if auth_mode == "Dashboard":
         st.subheader(f"Welcome to the Dashboard, {st.session_state['username']}!")
 
         # Stock Trends Section
-        st.write("### Stock Trends")
+        st.write("### Current Stock Price Trends")
         ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA, AMZN):", "AAPL")
-        if st.button("Show Trends"):
+        if st.button("Show Stock Trends"):
             try:
-                # Fetch stock data
+                # Fetch real-time stock data
                 stock_data = yf.Ticker(ticker)
-                hist_data = stock_data.history(period="1y")  # 1 year of data
+                hist_data = stock_data.history(period="7d", interval="1h")  # Last 7 days with hourly updates
 
                 # Display stock data
-                st.write(f"### {ticker} - Last 1 Year Performance")
+                st.write(f"### {ticker} - Last 7 Days Performance (Hourly)")
                 st.line_chart(hist_data["Close"])
 
-                # Display key statistics
-                st.write("### Key Statistics:")
-                st.write(hist_data.describe())
+                # Display current price
+                current_price = stock_data.info['regularMarketPrice']
+                st.write(f"**Current Price of {ticker}:** ${current_price:.2f}")
 
             except Exception as e:
                 st.error("Error fetching stock data. Please check the ticker symbol.")
 
-        # File upload (optional for user)
-        st.write("### Upload Your Stock Data")
-        uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx"])
-        if uploaded_file:
-            df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file)
-            st.write("### Uploaded Data Preview:")
-            st.write(df)
-
+        # Top 5 Trending Stocks (Static Example)
+        st.write("### Top 5 Trending Stocks")
+        trending_stocks = ["AAPL", "TSLA", "AMZN", "GOOGL", "MSFT"]
+        for stock in trending_stocks:
+            try:
+                stock_info = yf.Ticker(stock)
+                st.write(f"**{stock}**: ${stock_info.info['regularMarketPrice']:.2f}")
+            except:
+                st.write(f"**{stock}**: Unable to fetch data.")
     else:
         st.error("Please log in to access the Dashboard.")
