@@ -61,7 +61,7 @@ class Dashboard:
         self.stock_model = stock_model
         self.portfolio = {}
         if 'balance' not in st.session_state:
-            st.session_state.balance = 10000  # Starting balance of $10,000
+            st.session_state.balance = 0  # Starting balance of $0
 
     def render_sidebar(self):
         st.sidebar.title("Stock Portfolio")
