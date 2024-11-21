@@ -2,7 +2,6 @@ streamlit
 pandas
 yfinance
 matplotlib
-talib
 seaborn
 statsmodel.api
 numpy
