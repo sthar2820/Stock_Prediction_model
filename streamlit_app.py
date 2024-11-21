@@ -4,6 +4,7 @@ import yfinance as yf
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import numpy as np
+from PIL import Image
 
 # Class for managing stock data and model analysis
 class StockModel:
@@ -61,7 +62,7 @@ class Dashboard:
         self.stock_model = stock_model
         self.portfolio = {}
         if 'balance' not in st.session_state:
-            st.session_state.balance = 0  # Starting balance of $0
+            st.session_state.balance = 10000  # Starting balance of $10,000
 
     def render_sidebar(self):
         st.sidebar.title("Stock Portfolio")
@@ -92,6 +93,10 @@ class Dashboard:
                 st.sidebar.error("Please enter a valid stock symbol.")
 
     def render_dashboard(self):
+        # Display logo
+        logo = Image.open("logo.png")  # Replace with your actual logo file
+        st.image(logo, width=200)
+
         st.title("Stock Price Dashboard with Analysis")
         
         # Render sidebar
@@ -125,6 +130,11 @@ class Dashboard:
                 ax.set_xlabel("Date")
                 ax.set_ylabel("Price")
                 st.pyplot(fig)
+
+                # Display stock time-series photo
+                st.write("### Stock Time-Series Photo:")
+                stock_photo = Image.open("stock_time_series.png")  # Replace with your actual stock photo file
+                st.image(stock_photo, caption=f"{ticker} Stock Time-Series", use_column_width=True)
 
             except Exception as e:
                 st.error(f"Error processing stock data: {e}")
