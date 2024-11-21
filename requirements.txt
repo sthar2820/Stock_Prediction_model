@@ -1,1 +1,10 @@
-streamlit>=1.26.0
+streamlit
+pandas
+yfinance
+matplotlib
+talib
+seaborn
+statsmodel.api
+numpy
+scikit-learn
+RandomForestRegressor
