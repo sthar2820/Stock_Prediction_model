@@ -1,47 +1,37 @@
-pip install yfinance talib numpy pandas scikit-learn statsmodels
-import pickle
-from sklearn.tree import DecisionTreeRegressor
-import statsmodels.api as sm
-import pandas as pd
 import yfinance as yf
 import numpy as np
+import pickle
+import statsmodels.api as sm
 
-# Fetch historical stock data
-symbol = "AAPL"
-start_date = "2000-01-01"
-data = yf.download(symbol, start=start_date)
+class StockModel:
+    def __init__(self, model_path):
+        # Load the saved model
+        with open(model_path, "rb") as file:
+            self.model = pickle.load(file)
 
-# Prepare the data
-data["Percent Change"] = data["Adj Close"].pct_change()
-data["5d_future_close"] = data["Adj Close"].shift(-5)
-data["5d_close_future_pct"] = data["5d_future_close"].pct_change(5)
-data["5d_close_pct"] = data["Adj Close"].pct_change(5)
+    def preprocess_stock_data(self, ticker):
+        """
+        Fetch and preprocess stock data to match the model's input format.
+        """
+        stock_data = yf.Ticker(ticker).history(period="1y")
+        stock_data["Percent Change"] = stock_data["Close"].pct_change()
+        # Example features: mean, std, percent change
+        features = np.array([
+            stock_data["Close"].mean(),
+            stock_data["Close"].std(),
+            stock_data["Percent Change"].mean()
+        ])
+        return features.reshape(1, -1)
 
-# Add TA-Lib features (moving averages and RSI)
-feature_names = ["5d_close_pct"]
-for n in [14, 30, 50, 200]:
-    data[f"ma{n}"] = data["Adj Close"].rolling(window=n).mean() / data["Adj Close"]
-    data[f"rsi{n}"] = 100 - (100 / (1 + data["Adj Close"].diff().rolling(n).mean() / abs(data["Adj Close"].diff().rolling(n).mean())))
-    feature_names.extend([f"ma{n}", f"rsi{n}"])
-
-# Drop NA values for consistent training
-data = data.dropna()
-
-# Prepare features and targets
-features = sm.add_constant(data[feature_names])
-targets = data["5d_close_future_pct"]
-
-# Train-test split
-train_size = int(0.85 * len(features))
-train_features, test_features = features[:train_size], features[train_size:]
-train_targets, test_targets = targets[:train_size], targets[train_size:]
-
-# Train the best-performing model (Decision Tree Regressor with max_depth=3)
-best_model = DecisionTreeRegressor(max_depth=3)
-best_model.fit(train_features, train_targets)
-
-# Save the trained model
-with open("stock_prediction_model.pkl", "wb") as model_file:
-    pickle.dump(best_model, model_file)
-
-print("Model saved as 'stock_prediction_model.pkl'")
+    def predict(self, ticker):
+        """
+        Predict stock value based on the model and preprocessed data.
+        """
+        try:
+            # Preprocess the stock data
+            input_features = self.preprocess_stock_data(ticker)
+            input_features = sm.add_constant(input_features)  # Add constant for OLS model
+            prediction = self.model.predict(input_features)[0]
+            return prediction
+        except Exception as e:
+            raise ValueError("Error processing the stock ticker.") from e
