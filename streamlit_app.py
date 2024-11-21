@@ -43,29 +43,14 @@ class AuthManager:
             return f"Welcome, {username}!"
         return "Invalid username or password."
 
-# Class for managing stock data and analysis
+# Class for managing stock data
 class StockManager:
-    def __init__(self):
-        self.tech_stocks = ['AAPL', 'GOOG', 'MSFT', 'AMZN']
-        self.company_names = ["APPLE", "GOOGLE", "MICROSOFT", "AMAZON"]
-
-    def fetch_tech_stocks(self):
+    @staticmethod
+    def fetch_stock_data(ticker):
         end = datetime.now()
         start = datetime(end.year - 1, end.month, end.day)
-        company_list = []
-
-        for stock, com_name in zip(self.tech_stocks, self.company_names):
-            data = yf.Ticker(stock).history(start=start, end=end)
-            data["company_name"] = com_name
-            company_list.append(data)
-
-        return pd.concat(company_list, axis=0)
-
-    def fetch_stock_trends(self, ticker):
-        stock_data = yf.Ticker(ticker)
-        hist_data = stock_data.history(period="7d", interval="1h")
-        current_price = stock_data.info.get('regularMarketPrice', 'N/A')
-        return hist_data, current_price
+        stock_data = yf.Ticker(ticker).history(start=start, end=end)
+        return stock_data
 
 # Class for managing the dashboard
 class Dashboard:
@@ -77,32 +62,20 @@ class Dashboard:
         if st.session_state.get("logged_in"):
             st.subheader(f"Welcome to the Dashboard, {st.session_state['username']}!")
 
-            # Tech Stocks Section
-            st.write("### Tech Stock Data")
-            tech_df = self.stock_manager.fetch_tech_stocks()
-            with st.expander("View Tech Stock Data (Collapsible)", expanded=True):
-                st.dataframe(tech_df.tail(10))
-
-            # Stock Trends Section
-            st.write("### Current Stock Price Trends")
+            # Stock Visualization Section
+            st.write("### Stock Visualization")
             ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA, AMZN):", "AAPL")
-            if st.button("Show Stock Trends"):
+            if st.button("Show Stock Visualization"):
                 try:
-                    hist_data, current_price = self.stock_manager.fetch_stock_trends(ticker)
-                    st.write(f"### {ticker} - Last 7 Days Performance (Hourly)")
-                    st.line_chart(hist_data["Close"])
-                    st.write(f"**Current Price of {ticker}:** ${current_price}")
-                except Exception as e:
-                    st.error("Error fetching stock data. Please check the ticker symbol.")
+                    stock_data = self.stock_manager.fetch_stock_data(ticker)
+                    st.write(f"### {ticker} Stock Data (Last 5 Rows):")
+                    st.dataframe(stock_data.tail())
 
-            # Trending Stocks
-            st.write("### Top 5 Trending Stocks")
-            for stock in self.stock_manager.tech_stocks:
-                try:
-                    _, current_price = self.stock_manager.fetch_stock_trends(stock)
-                    st.write(f"**{stock}**: ${current_price}")
-                except:
-                    st.write(f"**{stock}**: Unable to fetch data.")
+                    # Visualization
+                    st.line_chart(stock_data["Close"])
+                    st.write(f"**Current Price of {ticker}:** ${stock_data['Close'].iloc[-1]:.2f}")
+                except Exception as e:
+                    st.error(f"Error fetching stock data: {e}")
         else:
             st.error("Please log in to access the Dashboard.")
 
