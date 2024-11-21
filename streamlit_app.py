@@ -1,8 +1,9 @@
 import streamlit as st
 import pandas as pd
 import yfinance as yf
-from datetime import datetime
+from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
+import numpy as np
 
 # Class for managing stock data and model analysis
 class StockModel:
@@ -11,36 +12,43 @@ class StockModel:
 
     def fetch_stock_data(self, ticker):
         end = datetime.now()
-        start = datetime(end.year - 5, end.month, end.day)
+        start = end - timedelta(days=5*365)  # 5 years of data
         data = yf.Ticker(ticker).history(start=start, end=end)
         return data
 
     def feature_engineering(self, data):
         # Calculate percent change
-        data["Percent Change"] = data["Adj Close"].pct_change()
+        data["Percent Change"] = data["Close"].pct_change() * 100
 
         # Calculate 5-day future close and percent changes
-        data["5d_future_close"] = data["Adj Close"].shift(-5)
-        data["5d_close_future_pct"] = data["5d_future_close"].pct_change(5)
-        data["5d_close_pct"] = data["Adj Close"].pct_change(5)
+        data["5d_future_close"] = data["Close"].shift(-5)
+        data["5d_close_future_pct"] = data["5d_future_close"].pct_change(5) * 100
+        data["5d_close_pct"] = data["Close"].pct_change(5) * 100
 
         # Add moving averages and RSI indicators
         self.feature_names = ["5d_close_pct"]
         for n in [14, 30, 50, 200]:
-            data[f"ma{n}"] = talib.SMA(data["Adj Close"].values, timeperiod=n) / data["Adj Close"]
-            data[f"rsi{n}"] = talib.RSI(data["Adj Close"].values, timeperiod=n)
+            data[f"ma{n}"] = data["Close"].rolling(window=n).mean() / data["Close"]
+            data[f"rsi{n}"] = self.calculate_rsi(data["Close"], n)
             self.feature_names.extend([f"ma{n}", f"rsi{n}"])
 
         return data.dropna()
 
+    def calculate_rsi(self, prices, period):
+        delta = prices.diff()
+        gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+        loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+        rs = gain / loss
+        return 100 - (100 / (1 + rs))
+
     def visualize_data(self, data):
         # Histogram of Percent Change
-        plt.figure(figsize=(10, 6))
-        plt.hist(data["Percent Change"], bins=75, edgecolor="black")
-        plt.title("Percent Change Histogram")
-        plt.xlabel("Percent Change")
-        plt.ylabel("Frequency")
-        st.pyplot(plt)
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.hist(data["Percent Change"].dropna(), bins=75, edgecolor="black")
+        ax.set_title("Percent Change Histogram")
+        ax.set_xlabel("Percent Change")
+        ax.set_ylabel("Frequency")
+        st.pyplot(fig)
 
         # Correlation matrix visualization
         corr = data[["5d_close_pct", "5d_close_future_pct"]].corr()
@@ -72,6 +80,16 @@ class Dashboard:
                 # Visualize data
                 st.write("### Visualizations:")
                 self.stock_model.visualize_data(data)
+
+                # Display stock price chart
+                st.write("### Stock Price Chart:")
+                fig, ax = plt.subplots(figsize=(10, 6))
+                ax.plot(data.index, data["Close"])
+                ax.set_title(f"{ticker} Stock Price")
+                ax.set_xlabel("Date")
+                ax.set_ylabel("Price")
+                st.pyplot(fig)
+
             except Exception as e:
                 st.error(f"Error processing stock data: {e}")
 
