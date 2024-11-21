@@ -1,5 +1,9 @@
 import streamlit as st
 
-st.title('Stock Prediction Model')
+def main():
+    st.title("Streamlit App")
+    st.write("Welcome to the app!")
 
-st.write('Hello world!')
+if __name__ == "__main__":
+    main()
+
