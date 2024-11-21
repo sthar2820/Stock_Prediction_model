@@ -4,6 +4,7 @@ import json
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+import yfinance as yf  # Install with `pip install yfinance`
 
 # Helper functions for password hashing and user data
 def hash_password(password):
@@ -20,7 +21,7 @@ def save_user_data(user_data):
         json.dump(user_data, file)
 
 # App title
-st.title("Streamlit UI Website")
+st.title("Streamlit Stock Dashboard")
 
 # Sidebar for navigation
 st.sidebar.title("Navigation")
@@ -64,31 +65,33 @@ if auth_mode == "Dashboard":
     if st.session_state.get("logged_in"):
         st.subheader(f"Welcome to the Dashboard, {st.session_state['username']}!")
 
-        # File upload
-        st.write("### Upload a File:")
+        # Stock Trends Section
+        st.write("### Stock Trends")
+        ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA, AMZN):", "AAPL")
+        if st.button("Show Trends"):
+            try:
+                # Fetch stock data
+                stock_data = yf.Ticker(ticker)
+                hist_data = stock_data.history(period="1y")  # 1 year of data
+
+                # Display stock data
+                st.write(f"### {ticker} - Last 1 Year Performance")
+                st.line_chart(hist_data["Close"])
+
+                # Display key statistics
+                st.write("### Key Statistics:")
+                st.write(hist_data.describe())
+
+            except Exception as e:
+                st.error("Error fetching stock data. Please check the ticker symbol.")
+
+        # File upload (optional for user)
+        st.write("### Upload Your Stock Data")
         uploaded_file = st.file_uploader("Choose a file", type=["csv", "xlsx"])
         if uploaded_file:
             df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith(".csv") else pd.read_excel(uploaded_file)
-            st.write("### Data Preview:")
+            st.write("### Uploaded Data Preview:")
             st.write(df)
-
-            # Display basic stats
-            st.write("### Data Statistics:")
-            st.write(df.describe())
-
-            # Visualization
-            st.write("### Visualization:")
-            column = st.selectbox("Choose a column to visualize", df.columns)
-            if st.button("Generate Chart"):
-                fig, ax = plt.subplots()
-                df[column].value_counts().plot(kind="bar", ax=ax)
-                st.pyplot(fig)
-
-        # Input form
-        st.write("### Input Form:")
-        input_value = st.text_input("Enter a value:")
-        if st.button("Submit"):
-            st.success(f"You entered: {input_value}")
 
     else:
         st.error("Please log in to access the Dashboard.")
