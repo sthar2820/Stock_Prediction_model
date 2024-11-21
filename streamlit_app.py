@@ -59,9 +59,42 @@ class StockModel:
 class Dashboard:
     def __init__(self, stock_model):
         self.stock_model = stock_model
+        self.portfolio = {}
+        self.balance = 10000  # Starting balance of $10,000
+
+    def render_sidebar(self):
+        st.sidebar.title("Stock Portfolio")
+        
+        # Display current balance
+        st.sidebar.subheader(f"Current Balance: ${self.balance:.2f}")
+        
+        # Add money button
+        if st.sidebar.button("Add $1000"):
+            self.balance += 1000
+            st.sidebar.success("$1000 added to your balance!")
+
+        # List of stocks
+        st.sidebar.subheader("Your Stocks")
+        for stock, quantity in self.portfolio.items():
+            st.sidebar.text(f"{stock}: {quantity} shares")
+
+        # Add new stock to portfolio
+        new_stock = st.sidebar.text_input("Add a new stock to your portfolio:")
+        quantity = st.sidebar.number_input("Quantity:", min_value=1, value=1, step=1)
+        if st.sidebar.button("Add to Portfolio"):
+            if new_stock:
+                self.portfolio[new_stock] = self.portfolio.get(new_stock, 0) + quantity
+                st.sidebar.success(f"{quantity} shares of {new_stock} added to your portfolio!")
+            else:
+                st.sidebar.error("Please enter a valid stock symbol.")
 
     def render_dashboard(self):
         st.title("Stock Price Dashboard with Analysis")
+        
+        # Render sidebar
+        self.render_sidebar()
+
+        # Main content
         ticker = st.text_input("Enter Stock Ticker (e.g., AAPL, TSLA):", "AAPL")
 
         if st.button("Analyze Stock"):
