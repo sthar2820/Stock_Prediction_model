@@ -6,9 +6,6 @@ import pandas as pd
 import yfinance as yf
 from datetime import datetime
 
-# Enable pandas_datareader override for yfinance
-yf.pdr_override()
-
 # Helper functions for password hashing and user data
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -78,7 +75,7 @@ if auth_mode == "Dashboard":
         company_name = ["APPLE", "GOOGLE", "MICROSOFT", "AMAZON"]
 
         for stock, com_name in zip(tech_list, company_name):
-            data = yf.download(stock, start, end)
+            data = yf.Ticker(stock).history(start=start, end=end)
             data["company_name"] = com_name
             company_list.append(data)
 
@@ -102,8 +99,8 @@ if auth_mode == "Dashboard":
                 st.line_chart(hist_data["Close"])
 
                 # Display current price
-                current_price = stock_data.info['regularMarketPrice']
-                st.write(f"**Current Price of {ticker}:** ${current_price:.2f}")
+                current_price = stock_data.info.get('regularMarketPrice', 'N/A')
+                st.write(f"**Current Price of {ticker}:** ${current_price}")
 
             except Exception as e:
                 st.error("Error fetching stock data. Please check the ticker symbol.")
@@ -114,7 +111,8 @@ if auth_mode == "Dashboard":
         for stock in trending_stocks:
             try:
                 stock_info = yf.Ticker(stock)
-                st.write(f"**{stock}**: ${stock_info.info['regularMarketPrice']:.2f}")
+                current_price = stock_info.info.get('regularMarketPrice', 'N/A')
+                st.write(f"**{stock}**: ${current_price}")
             except:
                 st.write(f"**{stock}**: Unable to fetch data.")
     else:
