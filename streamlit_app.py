@@ -50,11 +50,6 @@ class StockModel:
         ax.set_ylabel("Frequency")
         st.pyplot(fig)
 
-        # Correlation matrix visualization
-        corr = data[["5d_close_pct", "5d_close_future_pct"]].corr()
-        st.write("Correlation Matrix:")
-        st.write(corr)
-
 # Chatbot class
 class Chatbot:
     def __init__(self):
