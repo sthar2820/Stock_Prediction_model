@@ -162,6 +162,49 @@ class Dashboard:
 
         # Render chatbot
         self.render_chatbot()
+        def __init__(self, stock_model, chatbot):
+            self.stock_model = stock_model
+            self.chatbot = chatbot
+            self.stock_prediction = StockPrediction()  # New instance
+            self.portfolio = {}
+        if 'balance' not in st.session_state:
+            st.session_state.balance = 0
+        if 'chat_history' not in st.session_state:
+            st.session_state.chat_history = []
+            if st.button("Train & Predict"):
+    try:
+        # Prepare data
+        data = self.stock_model.fetch_stock_data(ticker)
+        data = self.stock_model.feature_engineering(data)
+        
+        # Train the model
+        model, mse = self.stock_prediction.train_model(data, self.stock_model.feature_names, "5d_future_close")
+        st.success(f"Model trained! Mean Squared Error: {mse:.2f}")
+        
+        # Predict future prices
+        future_predictions = self.stock_prediction.predict_future(model, data, self.stock_model.feature_names)
+        data["Predicted Future Price"] = future_predictions
+
+        # Display predictions
+        st.write("### Future Price Predictions (Last 10 Rows):")
+        st.dataframe(data[["Close", "5d_future_close", "Predicted Future Price"]].tail(10))
+
+        # Visualization
+        st.write("### Predicted vs. Actual Future Prices:")
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.plot(data.index, data["5d_future_close"], label="Actual Future Price", color="blue")
+        ax.plot(data.index, data["Predicted Future Price"], label="Predicted Future Price", color="red")
+        ax.set_title(f"{ticker} Future Price Predictions")
+        ax.set_xlabel("Date")
+        ax.set_ylabel("Price")
+        ax.legend()
+        st.pyplot(fig)
+    except Exception as e:
+        st.error(f"Error during prediction: {e}")
+        st.write("### Predict Stock Prices:")
+        st.button("Train & Predict")
+
+
 
 # Main app logic
 def main():
