@@ -181,7 +181,7 @@ class Dashboard:
 
                 # Display features and target
                 st.write("### Engineered Features (First 5 Rows):")
-                st.dataframe(data[self.stock_model.feature_names].head())
+                st.dataframe(data[self.stock_model.feature_names].tail())
 
                 # Visualize data
                 st.write("### Visualizations:")
