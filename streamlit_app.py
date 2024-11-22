@@ -222,4 +222,25 @@ class Dashboard:
                 fig, ax = plt.subplots(figsize=(10, 6))
                 ax.plot(data.index, data["5d_future_close"], label="Actual Future Price", color="blue")
                 ax.plot(data.index, data["Predicted Future Price"], label="Predicted Future Price", color="red")
-                ax.set_title(f"{ticker} Future
+                ax.set_title(f"{ticker} Future Price Predictions")
+                ax.set_xlabel("Date")
+                ax.set_ylabel("Price")
+                ax.legend()
+                st.pyplot(fig)
+            except Exception as e:
+                st.error(f"Error during prediction: {e}")
+
+        # Render chatbot
+        self.render_chatbot()
+
+
+# Main app logic
+def main():
+    stock_model = StockModel()
+    chatbot = Chatbot()
+    dashboard = Dashboard(stock_model, chatbot)
+    dashboard.render_dashboard()
+
+
+if __name__ == "__main__":
+    main()
