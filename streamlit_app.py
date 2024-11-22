@@ -171,19 +171,19 @@ class Dashboard:
             st.session_state.balance = 0
         if 'chat_history' not in st.session_state:
             st.session_state.chat_history = []
-            if st.button("Train & Predict"):
-    try:
+        if st.button("Train & Predict"):
+            try:
         # Prepare data
-        data = self.stock_model.fetch_stock_data(ticker)
-        data = self.stock_model.feature_engineering(data)
+            data = self.stock_model.fetch_stock_data(ticker)
+            data = self.stock_model.feature_engineering(data)
         
         # Train the model
-        model, mse = self.stock_prediction.train_model(data, self.stock_model.feature_names, "5d_future_close")
-        st.success(f"Model trained! Mean Squared Error: {mse:.2f}")
+            model, mse = self.stock_prediction.train_model(data, self.stock_model.feature_names, "5d_future_close")
+            st.success(f"Model trained! Mean Squared Error: {mse:.2f}")
         
         # Predict future prices
-        future_predictions = self.stock_prediction.predict_future(model, data, self.stock_model.feature_names)
-        data["Predicted Future Price"] = future_predictions
+            future_predictions = self.stock_prediction.predict_future(model, data, self.stock_model.feature_names)
+            data["Predicted Future Price"] = future_predictions
 
         # Display predictions
         st.write("### Future Price Predictions (Last 10 Rows):")
