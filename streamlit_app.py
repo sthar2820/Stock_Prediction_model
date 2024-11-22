@@ -55,13 +55,35 @@ class StockModel:
         st.write("Correlation Matrix:")
         st.write(corr)
 
+# Chatbot class
+class Chatbot:
+    def __init__(self):
+        self.responses = {
+            "hello": "Hello! How can I assist you with stock analysis today?",
+            "help": "I can help you analyze stocks, view your portfolio, and add money to your balance. What would you like to do?",
+            "analyze": "To analyze a stock, enter the ticker symbol in the main dashboard and click 'Analyze Stock'.",
+            "portfolio": "You can view your portfolio in the sidebar. It shows your current balance and the stocks you own.",
+            "add money": "To add money to your balance, enter the amount in the sidebar and click 'Add Money'.",
+            "bye": "Goodbye! Feel free to return if you need more assistance with stock analysis.",
+        }
+
+    def get_response(self, user_input):
+        user_input = user_input.lower()
+        for key in self.responses:
+            if key in user_input:
+                return self.responses[key]
+        return "I'm sorry, I don't understand. Could you please rephrase your question or ask for 'help'?"
+
 # Dashboard class
 class Dashboard:
-    def __init__(self, stock_model):
+    def __init__(self, stock_model, chatbot):
         self.stock_model = stock_model
+        self.chatbot = chatbot
         self.portfolio = {}
         if 'balance' not in st.session_state:
             st.session_state.balance = 0
+        if 'chat_history' not in st.session_state:
+            st.session_state.chat_history = []
 
     def render_sidebar(self):
         st.sidebar.title("Stock Portfolio")
@@ -90,6 +112,20 @@ class Dashboard:
                 st.sidebar.success(f"{quantity} shares of {new_stock} added to your portfolio!")
             else:
                 st.sidebar.error("Please enter a valid stock symbol.")
+
+    def render_chatbot(self):
+        st.subheader("Chatbot Assistant")
+        user_input = st.text_input("Ask me anything about stock analysis:")
+        if st.button("Send"):
+            bot_response = self.chatbot.get_response(user_input)
+            st.session_state.chat_history.append(("You", user_input))
+            st.session_state.chat_history.append(("Bot", bot_response))
+
+        for role, message in st.session_state.chat_history:
+            if role == "You":
+                st.write(f"You: {message}")
+            else:
+                st.write(f"Bot: {message}")
 
     def render_dashboard(self):
         st.title("Stock Price Dashboard with Analysis")
@@ -129,10 +165,14 @@ class Dashboard:
             except Exception as e:
                 st.error(f"Error processing stock data: {e}")
 
+        # Render chatbot
+        self.render_chatbot()
+
 # Main app logic
 def main():
     stock_model = StockModel()
-    dashboard = Dashboard(stock_model)
+    chatbot = Chatbot()
+    dashboard = Dashboard(stock_model, chatbot)
     dashboard.render_dashboard()
 
 if __name__ == "__main__":
