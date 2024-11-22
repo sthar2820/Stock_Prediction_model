@@ -4,6 +4,10 @@ import yfinance as yf
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
+
 
 # Class for managing stock data and model analysis
 class StockModel:
@@ -12,7 +16,7 @@ class StockModel:
 
     def fetch_stock_data(self, ticker):
         end = datetime.now()
-        start = end - timedelta(days=5*365)  # 5 years of data
+        start = end - timedelta(days=5 * 365)  # 5 years of data
         data = yf.Ticker(ticker).history(start=start, end=end)
         return data
 
@@ -50,6 +54,39 @@ class StockModel:
         ax.set_ylabel("Frequency")
         st.pyplot(fig)
 
+
+# Class for stock prediction
+class StockPrediction:
+    def train_model(self, data, features, target):
+        """
+        Train a linear regression model to predict future stock prices.
+        """
+        try:
+            X = data[features]
+            y = data[target]
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+            model = LinearRegression()
+            model.fit(X_train, y_train)
+
+            y_pred = model.predict(X_test)
+            mse = mean_squared_error(y_test, y_pred)
+
+            return model, mse
+        except Exception as e:
+            raise ValueError(f"Error in training the model: {e}")
+
+    def predict_future(self, model, data, features):
+        """
+        Predict the stock's future closing price based on the trained model.
+        """
+        try:
+            predictions = model.predict(data[features])
+            return predictions
+        except Exception as e:
+            raise ValueError(f"Error in making predictions: {e}")
+
+
 # Chatbot class
 class Chatbot:
     def __init__(self):
@@ -69,11 +106,13 @@ class Chatbot:
                 return self.responses[key]
         return "I'm sorry, I don't understand. Could you please rephrase your question or ask for 'help'?"
 
+
 # Dashboard class
 class Dashboard:
     def __init__(self, stock_model, chatbot):
         self.stock_model = stock_model
         self.chatbot = chatbot
+        self.stock_prediction = StockPrediction()
         self.portfolio = {}
         if 'balance' not in st.session_state:
             st.session_state.balance = 0
@@ -82,10 +121,10 @@ class Dashboard:
 
     def render_sidebar(self):
         st.sidebar.title("Stock Portfolio")
-        
+
         # Display current balance
         st.sidebar.subheader(f"Current Balance: ${st.session_state.balance:.2f}")
-        
+
         # Add custom amount of money
         amount_to_add = st.sidebar.number_input("Enter amount to add:", min_value=0.01, value=100.00, step=0.01, format="%.2f")
         if st.sidebar.button("Add Money"):
@@ -124,7 +163,7 @@ class Dashboard:
 
     def render_dashboard(self):
         st.title("Stock Price Dashboard with Analysis")
-        
+
         # Render sidebar
         self.render_sidebar()
 
@@ -160,59 +199,27 @@ class Dashboard:
             except Exception as e:
                 st.error(f"Error processing stock data: {e}")
 
-        # Render chatbot
-        self.render_chatbot()
-        def __init__(self, stock_model, chatbot):
-            self.stock_model = stock_model
-            self.chatbot = chatbot
-            self.stock_prediction = StockPrediction()  # New instance
-            self.portfolio = {}
-        if 'balance' not in st.session_state:
-            st.session_state.balance = 0
-        if 'chat_history' not in st.session_state:
-            st.session_state.chat_history = []
-            
+        # Train and predict
         if st.button("Train & Predict"):
             try:
-        # Prepare data
                 data = self.stock_model.fetch_stock_data(ticker)
                 data = self.stock_model.feature_engineering(data)
-        
-        # Train the model
+
+                # Train the model
                 model, mse = self.stock_prediction.train_model(data, self.stock_model.feature_names, "5d_future_close")
                 st.success(f"Model trained! Mean Squared Error: {mse:.2f}")
-        
-        # Predict future prices
+
+                # Predict future prices
                 future_predictions = self.stock_prediction.predict_future(model, data, self.stock_model.feature_names)
                 data["Predicted Future Price"] = future_predictions
 
-        # Display predictions
+                # Display predictions
                 st.write("### Future Price Predictions (Last 10 Rows):")
                 st.dataframe(data[["Close", "5d_future_close", "Predicted Future Price"]].tail(10))
 
-        # Visualization
+                # Visualization
                 st.write("### Predicted vs. Actual Future Prices:")
                 fig, ax = plt.subplots(figsize=(10, 6))
                 ax.plot(data.index, data["5d_future_close"], label="Actual Future Price", color="blue")
                 ax.plot(data.index, data["Predicted Future Price"], label="Predicted Future Price", color="red")
-                ax.set_title(f"{ticker} Future Price Predictions")
-                ax.set_xlabel("Date")
-                ax.set_ylabel("Price")
-                ax.legend()
-                st.pyplot(fig)
-            except Exception as e:
-                st.error(f"Error during prediction: {e}")
-                st.write("### Predict Stock Prices:")
-                st.button("Train & Predict")
-
-
-
-# Main app logic
-def main():
-    stock_model = StockModel()
-    chatbot = Chatbot()
-    dashboard = Dashboard(stock_model, chatbot)
-    dashboard.render_dashboard()
-
-if __name__ == "__main__":
-    main()
+                ax.set_title(f"{ticker} Future
